@@ -16,7 +16,9 @@ x:Class="MyExcelMAUIApp.MainPage">
 
         <Grid Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" HorizontalOptions="Center">
 
-            <StackLayout Orientation="Horizontal">
+            <StackLayout Orientation="Horizontal"
+                          Margin="10"
+                         Spacing="10">
                 <Button Text="Зберегти" Clicked="SaveButton_Clicked" />
                 <Button Text="Прочитати" Clicked="ReadButton_Clicked" />
                 <Button Text="Видалити рядок" Clicked="DeleteRowButton_Clicked" />
@@ -28,7 +30,10 @@ x:Class="MyExcelMAUIApp.MainPage">
                 <Button Text="Вийти" Clicked="ExitButton_Clicked" />
             </StackLayout>
         </Grid>
+
+
         
+
         <ScrollView Grid.Row="2" Grid.ColumnSpan="2">
             <Grid x:Name="grid">
                 <Grid.RowDefinitions>

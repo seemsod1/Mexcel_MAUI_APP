@@ -44,35 +44,38 @@ namespace MyExcelMAUIApp
         private void AddColumnsAndColumnLabels()
         {
             for (var col = 0; col < CountColumn; col++)
+            {
                 grid.ColumnDefinitions.Add(new ColumnDefinition());
 
-            var colCount = grid.ColumnDefinitions.Count - 1;
-            var rowCount = grid.RowDefinitions.Count;
+                var colCount = grid.ColumnDefinitions.Count - 1;
+                var rowCount = grid.RowDefinitions.Count;
 
-            var label = new Label
-            {
-                Text = GetColumnName(colCount),
-                VerticalOptions = LayoutOptions.Center,
-                HorizontalOptions = LayoutOptions.Center
-            };
-            Grid.SetRow(label, 0);
-            Grid.SetColumn(label, colCount);
-            grid.Children.Add(label);
-            _widgets[$"{GetColumnName(colCount)}0"] = label;
+                var label = new Label
+                {
+                    Text = GetColumnName(colCount),
+                    VerticalOptions = LayoutOptions.Center,
+                    HorizontalOptions = LayoutOptions.Center
+                };
+                Grid.SetRow(label, 0);
+                Grid.SetColumn(label, colCount);
+                grid.Children.Add(label);
+                _widgets[$"{GetColumnName(colCount)}0"] = label;
 
-            for (var row = 1; row < rowCount; ++row)
-            {
-                var entry = CreateEntry();
-                Grid.SetRow(entry, row);
-                Grid.SetColumn(entry, colCount);
-                grid.Children.Add(entry);
-                _widgets[GetCellName(entry)] = entry;
+                for (var row = 1; row < rowCount; ++row)
+                {
+                    var entry = CreateEntry();
+                    Grid.SetRow(entry, row);
+                    Grid.SetColumn(entry, colCount);
+                    grid.Children.Add(entry);
+                    _widgets[GetCellName(entry)] = entry;
 
-                Calculator.CellTable.Cells[GetCellName(entry)] = new Backend.Cell();
+                    Calculator.CellTable.Cells[GetCellName(entry)] = new Backend.Cell();
+                }
             }
         }
 
-        
+
+
         private void AddRowsAndCellEntries()
         {
             for (var row = 0; row < CountRow; row++)
@@ -123,7 +126,9 @@ namespace MyExcelMAUIApp
             {
                 Text = "",
                 VerticalOptions = LayoutOptions.Center,
-                HorizontalOptions = LayoutOptions.Fill
+                HorizontalOptions = LayoutOptions.Fill,
+               
+
             };
             entry.Unfocused += Entry_Unfocused;
             entry.Focused += Entry_Focused;
