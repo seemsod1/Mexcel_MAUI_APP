@@ -56,12 +56,13 @@
 		<PackageReference Include="Antlr4.Runtime" Version="4.6.6" />
 		<PackageReference Include="CommunityToolkit.Maui" Version="6.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="7.0.0" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Antlr4 Update="Parser\Counting.g4">
+	  <Antlr4 Update="BackEnd\Counting.g4">
 	    <Visitor>True</Visitor>
-	    <CustomToolNamespace>Parser</CustomToolNamespace>
+	    <CustomToolNamespace>Backend</CustomToolNamespace>
 	  </Antlr4>
 	</ItemGroup>
 

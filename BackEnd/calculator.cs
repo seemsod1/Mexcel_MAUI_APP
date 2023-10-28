@@ -1,7 +1,7 @@
 ﻿using Antlr4.Runtime;
 
 
-namespace Parser;
+namespace Backend;
     public static class Calculator
     {
         public static Table CellTable { get; }
