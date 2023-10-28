@@ -6,8 +6,8 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Parser
-{
+namespace Backend;
+
     class CountingVisitor : CountingBaseVisitor<double>
     {
         
@@ -136,4 +136,4 @@ namespace Parser
             return Visit(context.GetRuleContext<CountingParser.ExpressionContext>(1));
         }
     }
-}
+

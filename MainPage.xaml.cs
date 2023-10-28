@@ -6,8 +6,8 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using Parser;
-using Cell = Parser.Cell;
+using Backend;
+using Cell = Backend.Cell;
 using Grid = Microsoft.Maui.Controls.Grid;
 using System.Xml.Linq;
 
@@ -44,14 +44,7 @@ namespace MyExcelMAUIApp
         private void AddColumnsAndColumnLabels()
         {
             for (var col = 0; col < CountColumn; col++)
-            {
-                AddColumn();
-            }
-        }
-
-        private void AddColumn()
-        {
-            grid.ColumnDefinitions.Add(new ColumnDefinition());
+                grid.ColumnDefinitions.Add(new ColumnDefinition());
 
             var colCount = grid.ColumnDefinitions.Count - 1;
             var rowCount = grid.RowDefinitions.Count;
@@ -75,46 +68,45 @@ namespace MyExcelMAUIApp
                 grid.Children.Add(entry);
                 _widgets[GetCellName(entry)] = entry;
 
-                Calculator.CellTable.Cells[GetCellName(entry)] = new Parser.Cell();
+                Calculator.CellTable.Cells[GetCellName(entry)] = new Backend.Cell();
             }
         }
+
+        
         private void AddRowsAndCellEntries()
         {
             for (var row = 0; row < CountRow; row++)
             {
-                AddRow();
+                grid.RowDefinitions.Add(new RowDefinition());
+
+                var colCount = grid.ColumnDefinitions.Count;
+                var rowCount = grid.RowDefinitions.Count - 1;
+
+                var label = new Label
+                {
+                    Text = rowCount.ToString(),
+                    VerticalOptions = LayoutOptions.Center,
+                    HorizontalOptions = LayoutOptions.Center
+                };
+                Grid.SetRow(label, rowCount);
+                Grid.SetColumn(label, 0);
+                grid.Children.Add(label);
+                _widgets[$"0{rowCount}"] = label;
+
+
+                for (var col = 1; col < colCount; ++col)
+                {
+                    var entry = CreateEntry();
+                    Grid.SetRow(entry, rowCount);
+                    Grid.SetColumn(entry, col);
+                    grid.Children.Add(entry);
+                    _widgets[GetCellName(entry)] = entry;
+
+                    Calculator.CellTable.Cells[GetCellName(entry)] = new Backend.Cell();
+                }
             }
         }
-        private void AddRow()
-        {
-            grid.RowDefinitions.Add(new RowDefinition());
-
-            var colCount = grid.ColumnDefinitions.Count;
-            var rowCount = grid.RowDefinitions.Count - 1;
-
-            var label = new Label
-            {
-                Text = rowCount.ToString(),
-                VerticalOptions = LayoutOptions.Center,
-                HorizontalOptions = LayoutOptions.Center
-            };
-            Grid.SetRow(label, rowCount);
-            Grid.SetColumn(label, 0);
-            grid.Children.Add(label);
-            _widgets[$"0{rowCount}"] = label;
-
-
-            for (var col = 1; col < colCount; ++col)
-            {
-                var entry = CreateEntry();
-                Grid.SetRow(entry, rowCount);
-                Grid.SetColumn(entry, col);
-                grid.Children.Add(entry);
-                _widgets[GetCellName(entry)] = entry;
-
-                Calculator.CellTable.Cells[GetCellName(entry)] = new Parser.Cell();
-            }
-        }
+        
         private string GetCellName(IView view)
         {
             return GetNameByPosition(grid.GetRow(view), grid.GetColumn(view));
@@ -165,25 +157,17 @@ namespace MyExcelMAUIApp
             var newExpression = entry.Text;
             var oldExpression = Calculator.CellTable.Cells[cellAddress].Expression;
             
-            if (!Calculator.CellTable.EditCell(cellAddress, newExpression))
+            if (!Calculator.CellTable.SetCell(cellAddress, newExpression))
             {
                 Calculator.CellTable.Cells[cellAddress].Expression = oldExpression;
                 await DisplayAlert("Помилка", "Введено недопустимий вираз", "ОК");
             }
-            UpdateUIDependencies(cellAddress);
+            UpdateAffectedCells(Calculator.CellTable.AffectedCells);
             UpdateUI(cellAddress);
         }
 
 
 
-        private void UpdateUIDependencies(string name)
-        {
-            foreach (var observerName in Calculator.CellTable.Cells[name].ObservedBy)
-            {
-                UpdateUI(observerName);
-                UpdateUIDependencies(observerName);
-            }
-        }
 
         private void UpdateUI(string cellToUPD)
         {
@@ -192,7 +176,14 @@ namespace MyExcelMAUIApp
             entry.Text = cell.Expression == "" ? "" : cell.Value.ToString();
         }
 
+        private void UpdateAffectedCells(List<string> cells)
+        {
+            foreach (var cell in cells)
+            {
 
+                UpdateUI(cell);
+            }
+        }
 
 
 
@@ -201,31 +192,10 @@ namespace MyExcelMAUIApp
         {
             try
             {
-                // Create a dictionary to store the cell data
-                var cellData = new Dictionary<string, string>();
 
-                // Iterate through all cells in the Table
-                foreach (var cellAddress in Calculator.CellTable.GetCellAddresses())
-                {
-                    var cell = Calculator.CellTable.Cells[cellAddress];
-
-                    if (cell != null)
-                    {
-                        // Serialize the cell data (you might want to adjust this based on your data structure)
-                        string cellJson = JsonSerializer.Serialize(new
-                        {
-                            Value = cell.Value,
-                            Expression = cell.Expression,
-                            DependenciesOn = cell.Depends_on,
-                            DependenciesBy = cell.ObservedBy
-                        });
-
-                        cellData[cellAddress] = cellJson;
-                    }
-                }
 
                 // Serialize the cell data dictionary to JSON
-                string json = JsonSerializer.Serialize(cellData);
+                string json = Newtonsoft.Json.JsonConvert.SerializeObject(Calculator.CellTable.Cells);
 
                 // Create a memory stream to store the JSON data
                 using var stream = new MemoryStream(Encoding.Default.GetBytes(json));
@@ -247,10 +217,40 @@ namespace MyExcelMAUIApp
 
         private async void ReadButton_Clicked(object sender, EventArgs e)
         {
+                try
+                {
+                    
 
+                    var result = await FilePicker.PickAsync();
+
+                    if (result != null)
+                    {
+                        string filePath = result.FullPath;
+                        string json = File.ReadAllText(filePath);
+
+                        Calculator.CellTable.Cells = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string,Cell>>(json);
+                         Calculator.CellTable.AffectAll();    
+                      UpdateAffectedCells(Calculator.CellTable.AffectedCells);
+                    }
+                }
+                catch (Exception ex)
+                {
+                await DisplayAlert("Error", $"An error occurred while reading the table: {ex.Message}", "OK");
+                 }
+            
         }
 
+        private async void ClearButton_Clicked(object sender, EventArgs e) 
+        {
+            bool answer = await DisplayAlert("Підтвердження", "Ви дійсно хочете очистити таблицю?",
+            "Так", "Ні");
+            if (answer)
+            {
+                Calculator.CellTable.Clear();
+                UpdateAffectedCells(Calculator.CellTable.AffectedCells);
+            }
 
+        }
         private async void ExitButton_Clicked(object sender, EventArgs e)
         {
             bool answer = await DisplayAlert("Підтвердження", "Ви дійсно хочете вийти?",
@@ -332,7 +332,7 @@ namespace MyExcelMAUIApp
                 grid.Children.Add(entry);
                 _widgets[GetCellName(entry)] = entry;
 
-                Calculator.CellTable.Cells[GetCellName(entry)] = new Parser.Cell();
+                Calculator.CellTable.Cells[GetCellName(entry)] = new Backend.Cell();
             }
         }
         private void AddColumnButton_Clicked(object sender, EventArgs e)
@@ -361,7 +361,7 @@ namespace MyExcelMAUIApp
                 grid.Children.Add(entry);
                 _widgets[GetCellName(entry)] = entry;
 
-                Calculator.CellTable.Cells[GetCellName(entry)] = new Parser.Cell();
+                Calculator.CellTable.Cells[GetCellName(entry)] = new Backend.Cell();
             }
         }
 

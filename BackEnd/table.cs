@@ -1,14 +1,17 @@
 ﻿using System.Diagnostics;
+using System.Linq.Expressions;
 
-namespace Parser;
+namespace Backend;
 
 public class Table
 {
-    public Dictionary<string, Cell> Cells { get; }
+    public Dictionary<string, Cell> Cells { get; set; }
+    public List<string> AffectedCells { get; }
 
     public Table()
     {
         Cells = new Dictionary<string, Cell>();
+        AffectedCells = new List<string>();
     }
     public static bool IsCyclicDependency(string name, string dependencyName)
     {
@@ -19,9 +22,8 @@ public class Table
 
         return Calculator.CellTable.Cells[dependencyName].Depends_on.Any(childName => IsCyclicDependency(name, childName));
     }
-   
 
-    public bool EditCell(string cellAddress, string newExpression)
+    public bool SetCell(string cellAddress, string newExpression)
     {
         var cell = Calculator.CellTable.Cells[cellAddress];
         var oldDependence = cell.Depends_on;
@@ -31,7 +33,7 @@ public class Table
         {
             cell.Depends_on = new List<string>();
 
-            RefreshRecursively(cellAddress);
+            RefreshCellRecursively(cellAddress);
 
         }
         catch (Exception ex)
@@ -50,41 +52,54 @@ public class Table
     {
         return Cells.Keys.ToList();
     }
+    public void AffectAll()
+    {
+        foreach (var cell in Cells)
+        {   
+            AffectedCells.Add(cell.Key);
+        }
+    }
     public void Clear()
     {
-        Cells.Clear();
+        foreach (var cell in Cells) 
+        {
+            cell.Value.Value = 0;
+            cell.Value.Expression = "";
+            cell.Value.Depends_on = new List<string>();
+            cell.Value.ObservedBy = new List<string>();
+
+            AffectedCells.Add(cell.Key);
+
+        }
     }
-    public void SetCell(string cellAddress, Cell cell)
-    {
-        Cells[cellAddress] = cell;
-    }
+    
 
 
-    private void Refresh(string cellName)
+    private void RefreshCell(string cellName)
     {
 
         var cell = Cells[cellName];
         cell.Depends_on.Clear();
         Calculator.EvaluatingCellName = cellName;
         cell.Value = Calculator.Evaluate(cell.Expression);
-        //if (!AffectedCells.Contains(cellName))
-       // {
-       //     AffectedCells.Add(cellName);
-       // }
+        if (!AffectedCells.Contains(cellName))
+        {
+            AffectedCells.Add(cellName);
+        }
     }
 
-    public void RefreshRecursively(string cellName)
+    public void RefreshCellRecursively(string cellName)
     {
         var cell = Cells[cellName];
        
-        Refresh(cellName);
+        RefreshCell(cellName);
 
         for (int i = 0; i < cell.ObservedBy.Count; i++)
         {
             var observer = Cells[cell.ObservedBy[i]];
             if (observer.Depends_on.Contains(cellName))
             {
-                RefreshRecursively(cell.ObservedBy[i]);
+                RefreshCellRecursively(cell.ObservedBy[i]);
             }
             else
             {
