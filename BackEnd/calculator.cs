@@ -2,9 +2,9 @@
 
 
 namespace Backend;
-    public static class Calculator
+    public class Calculator
     {
-        public static Table CellTable { get; }
+        public static Table CellTable { get; set; }
         public static string EvaluatingCellName { get; set; }
 
         static Calculator()

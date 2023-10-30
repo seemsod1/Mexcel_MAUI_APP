@@ -10,6 +10,7 @@ using Backend;
 using Cell = Backend.Cell;
 using Grid = Microsoft.Maui.Controls.Grid;
 using System.Xml.Linq;
+using System.Diagnostics;
 
 namespace MyExcelMAUIApp
 {
@@ -18,6 +19,7 @@ namespace MyExcelMAUIApp
 
 
         private IDictionary<string, IView> _widgets;
+        
 
 
         const int CountColumn = 6;
@@ -33,7 +35,7 @@ namespace MyExcelMAUIApp
             this.fileSaver = fileSaver;
             CreateGrid();
         }
-        //створення таблиці
+        
         private void CreateGrid()
         {
 
@@ -154,6 +156,7 @@ namespace MyExcelMAUIApp
             var entry = (Entry)sender;
             var name = GetCellName(entry);
             entry.Text = Calculator.CellTable.Cells[name].Expression;
+            textInput.Text = Calculator.CellTable.Cells[name].Expression;
         }
         private async void Entry_Unfocused(object sender, FocusEventArgs e)
         {
@@ -197,23 +200,17 @@ namespace MyExcelMAUIApp
         {
             try
             {
-
-
-                // Serialize the cell data dictionary to JSON
                 string json = Newtonsoft.Json.JsonConvert.SerializeObject(Calculator.CellTable.Cells);
 
-                // Create a memory stream to store the JSON data
                 using var stream = new MemoryStream(Encoding.Default.GetBytes(json));
 
-                // Save the JSON data to a file using the file saver
                 var path = await fileSaver.SaveAsync("table.json", stream, cancellationTokenSource.Token);
 
-                // Display a message to the user
                 await DisplayAlert("Success", $"The table has been saved to {path}", "OK");
             }
             catch (Exception ex)
             {
-                // Handle the exception
+
                 await DisplayAlert("Error", $"An error occurred while saving the table: {ex.Message}", "OK");
             }
         }
@@ -224,9 +221,7 @@ namespace MyExcelMAUIApp
         {
                 try
                 {
-                    
-
-                    var result = await FilePicker.PickAsync();
+                   var result = await FilePicker.PickAsync();
 
                     if (result != null)
                     {
@@ -286,8 +281,20 @@ namespace MyExcelMAUIApp
                     name = GetNameByPosition(lastRowIndex, col);
                     grid.Children.Remove(_widgets[name]); // Remove entry
                     _widgets.Remove(name);
+                    if (Calculator.CellTable.Cells[name].ObservedBy != null)
+                    {
+                        foreach(var cell in Calculator.CellTable.Cells[name].ObservedBy)
+                        {
+                            Calculator.CellTable.SetCell(cell, ""); 
+                            
+                        }
+                        Calculator.CellTable.Cells[name].ObservedBy = new List<string>();
+
+                    }
                     Calculator.CellTable.Cells.Remove(name);
+                    Calculator.CellTable.AffectedCells.Remove(name);
                 }
+                UpdateAffectedCells(Calculator.CellTable.AffectedCells);
             }
         }
         private void DeleteColumnButton_Clicked(object sender, EventArgs e)
@@ -306,8 +313,20 @@ namespace MyExcelMAUIApp
                     name = GetNameByPosition(row, lastColumnIndex);
                     grid.Children.Remove(_widgets[name]); // Remove entry
                     _widgets.Remove(name);
+                    if (Calculator.CellTable.Cells[name].ObservedBy != null)
+                    {
+                        foreach (var cell in Calculator.CellTable.Cells[name].ObservedBy)
+                        {
+                            Calculator.CellTable.SetCell(cell, "");
+
+                        }
+                        Calculator.CellTable.Cells[name].ObservedBy = new List<string>();
+
+                    }
                     Calculator.CellTable.Cells.Remove(name);
+                    Calculator.CellTable.AffectedCells.Remove(name);
                 }
+                UpdateAffectedCells(Calculator.CellTable.AffectedCells);
             }
         }
         private void AddRowButton_Clicked(object sender, EventArgs e)
