@@ -32,7 +32,7 @@ x:Class="MyExcelMAUIApp.MainPage">
         </Grid>
 
 
-        
+        <Entry x:Name="textInput" Placeholder="Введіть текст" Grid.Row="1" Grid.ColumnSpan="2" />
 
         <ScrollView Grid.Row="2" Grid.ColumnSpan="2">
             <Grid x:Name="grid">

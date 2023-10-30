@@ -56,7 +56,7 @@ namespace Backend;
         }
         public override double VisitUnaryExpr(CountingParser.UnaryExprContext context)
         {
-            var operand = Visit(context.expression(1));
+            var operand = Visit(context.GetRuleContext<CountingParser.ExpressionContext>(1));
             if (context.operatorToken.Type == CountingLexer.UNARY_PLUS)
             {
                 Debug.WriteLine("+{0}", operand);
@@ -65,7 +65,7 @@ namespace Backend;
             else // CountingLexer.UNARY_MINUS
             {
                 Debug.WriteLine("-{0}", operand);
-                return -operand;
+                return operand*(-1);
             }
         }
 
@@ -116,16 +116,23 @@ namespace Backend;
         {
             var left = WalkLeft(context);
             var right = WalkRight(context);
-            if (context.operatorToken.Type == CountingLexer.MULTIPLY)
+        if (context.operatorToken.Type == CountingLexer.MULTIPLY)
+        {
+            Debug.WriteLine("{0}*{1}", left, right);
+            return left * right;
+        }
+        else //LabCalculatorLexer.DIVIDE
+        {
+            if (right == 0)
             {
-                Debug.WriteLine("{0}*{1}", left, right);
-                return left * right;
+                throw new Exception("DIVIDE BY ZERO");
             }
-            else //LabCalculatorLexer.DIVIDE
+            else
             {
                 Debug.WriteLine("{0}/{1}", left, right);
                 return left / right;
             }
+        }
         }
         private double WalkLeft(CountingParser.ExpressionContext context)
         {

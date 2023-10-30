@@ -6,7 +6,7 @@ namespace Backend;
 public class Table
 {
     public Dictionary<string, Cell> Cells { get; set; }
-    public List<string> AffectedCells { get; }
+    public List<string> AffectedCells { get; set; }
 
     public Table()
     {
